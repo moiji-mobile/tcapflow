@@ -1,0 +1,13 @@
+{
+	"comment": "",
+	"ignore": "",
+	"package": [
+		{
+			"checksumSHA1": "GJWw0732iS2+josVE02VIadw06U=",
+			"path": "gopkg.in/alexcesaro/statsd.v2",
+			"revision": "7fea3f0d2fab1ad973e641e51dba45443a311a90",
+			"revisionTime": "2016-03-20T18:21:10Z"
+		}
+	],
+	"rootPath": "github.com/moiji-mobile/tcapflow"
+}
