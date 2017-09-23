@@ -143,10 +143,11 @@ func main() {
 	pcapDevice := flag.String("pcap-device", "any", "Device to sniff")
 	pcapFilter := flag.String("pcap-filter", "sctp", "Filter for live sniffing")
 	expireDuration := flag.Duration("expire-state", 10 * time.Second, "Remove state")
+	statsdPrefix := flag.String("statsd-prefix", "", "Prefix for statsd messages")
 	flag.Parse()
 
 	flowHandler.ExpireDuration = *expireDuration
-	flowHandler.Statsd, err = statsd.New()
+	flowHandler.Statsd, err = statsd.New(statsd.Prefix(*statsdPrefix))
 	if err != nil {
 		fmt.Printf("ERROR: Failed to create statsd client\n")
 		return
