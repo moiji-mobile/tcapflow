@@ -111,7 +111,18 @@ func handleSUA(handler DataHandler, data *layers.SCTPData) {
 	fmt.Printf("SUA not implemented\n")
 }
 
-func handleSCTPData(handler DataHandler, data *layers.SCTPData) {
+func reportParseError(handler *TCAPFlowDataHandler, data []uint8) {
+	r := recover()
+	if r == nil {
+		return
+	}
+
+	fmt.Printf("ParseError: SCTP(%v) %v\n", hex.EncodeToString(data), r)
+}
+
+func handleSCTPData(handler *TCAPFlowDataHandler, data *layers.SCTPData) {
+	defer reportParseError(handler, data.Payload)
+
 	switch (data.PayloadProtocol) {
 	case layers.SCTPPayloadM2UA:
 		handleM2UA(handler, data)
@@ -124,7 +135,7 @@ func handleSCTPData(handler DataHandler, data *layers.SCTPData) {
 	}
 }
 
-func handlePacket(handler DataHandler, packet gopacket.Packet) {
+func handlePacket(handler *TCAPFlowDataHandler, packet gopacket.Packet) {
 	for _, p := range packet.Layers() {
 		if data, err := p.(*layers.SCTPData); err {
 			handleSCTPData(handler, data)
