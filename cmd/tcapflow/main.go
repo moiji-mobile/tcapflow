@@ -11,11 +11,9 @@ import (
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
 	"gopkg.in/alexcesaro/statsd.v2"
-)
 
-type DataHandler interface {
-	HandleData(called_gt SCCPAddress, calling_gt SCCPAddress, data []uint8)
-}
+	. "github.com/moiji-mobile/tcapflow"
+)
 
 type TCAPDialogueStart struct {
 	StartTime	time.Time
@@ -83,8 +81,8 @@ func procName(tag int) string {
 }
 
 func (t *TCAPFlowDataHandler) HandleData(called_gt SCCPAddress, calling_gt SCCPAddress, data []uint8) {
-	tag, otid, dtid, _, comp, _ := decodeTCAP(data)
-	infos, _ := decodeROS(comp.Bytes)
+	tag, otid, dtid, _, comp, _ := DecodeTCAP(data)
+	infos, _ := DecodeROS(comp.Bytes)
 
 	switch tag {
 	case TCbeginApp:
@@ -103,14 +101,6 @@ func (t *TCAPFlowDataHandler) HandleData(called_gt SCCPAddress, calling_gt SCCPA
 
 }
 
-func handleM2UA(handler DataHandler, data *layers.SCTPData) {
-	fmt.Printf("M2UA not implemented\n")
-}
-
-func handleSUA(handler DataHandler, data *layers.SCTPData) {
-	fmt.Printf("SUA not implemented\n")
-}
-
 func reportParseError(handler *TCAPFlowDataHandler, data []uint8) {
 	r := recover()
 	if r == nil {
@@ -125,13 +115,13 @@ func handleSCTPData(handler *TCAPFlowDataHandler, data *layers.SCTPData) {
 
 	switch (data.PayloadProtocol) {
 	case layers.SCTPPayloadM2UA:
-		handleM2UA(handler, data)
+		HandleM2UA(handler, data)
 	case layers.SCTPPayloadM3UA:
-		handleM3UA(handler, data.Payload)
+		HandleM3UA(handler, data.Payload)
 	case layers.SCTPPayloadM2PA:
-		handleM2PA(handler, data.Payload)
+		HandleM2PA(handler, data.Payload)
 	case layers.SCTPPayloadSUA:
-		handleSUA(handler, data)
+		HandleSUA(handler, data)
 	}
 }
 

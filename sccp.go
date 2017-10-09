@@ -1,4 +1,4 @@
-package main
+package tcapflow
 
 import (
 	"encoding/binary"

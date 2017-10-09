@@ -1,4 +1,4 @@
-package main
+package tcapflow
 
 import (
 	"encoding/asn1"
@@ -34,7 +34,7 @@ func decodeResult(data []byte) (info ROSInfo, err error) {
 	return
 }
 
-func decodeROS(data []byte) (infos []ROSInfo, err error) {
+func DecodeROS(data []byte) (infos []ROSInfo, err error) {
 	for len(data) > 0 {
 		var tmp asn1.RawValue
 

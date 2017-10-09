@@ -1,4 +1,4 @@
-package main
+package tcapflow
 
 import (
 	"encoding/binary"
@@ -19,7 +19,7 @@ type M2PA struct {
 	Priority	uint8
 }
 
-func handleM2PA(handler DataHandler, data []uint8) {
+func HandleM2PA(handler DataHandler, data []uint8) {
 	m2pa := M2PA{}
 	buf := bytes.NewReader(data)
 	err := binary.Read(buf, binary.BigEndian, &m2pa)

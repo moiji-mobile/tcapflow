@@ -1,4 +1,4 @@
-package main
+package tcapflow
 
 import (
 	"encoding/asn1"
@@ -12,7 +12,7 @@ const (
 	TCabortApp	= 7 // [APPLICATION 7] Abort,
 )
 
-func decodeTCAP(data []byte) (tag int, otid asn1.RawValue, dtid asn1.RawValue, dialoguePortion asn1.RawValue, components asn1.RawValue, err error) {
+func DecodeTCAP(data []byte) (tag int, otid asn1.RawValue, dtid asn1.RawValue, dialoguePortion asn1.RawValue, components asn1.RawValue, err error) {
 
 	var tmp asn1.RawValue
 

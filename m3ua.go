@@ -1,4 +1,4 @@
-package main
+package tcapflow
 
 import (
 	"encoding/binary"
@@ -19,7 +19,7 @@ type M3UAHeader struct {
 	Length		uint16
 }
 
-func handleM3UA(handler DataHandler, data []uint8) {
+func HandleM3UA(handler DataHandler, data []uint8) {
 	m3ua := M3UA{}
 	buf := bytes.NewReader(data)
 	err := binary.Read(buf, binary.BigEndian, &m3ua)
