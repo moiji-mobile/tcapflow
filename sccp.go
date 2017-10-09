@@ -75,6 +75,6 @@ func handleSCCP(handler DataHandler, data []uint8) {
 	payloadLen := data[offset]
 	payloadDat := data[offset + 1: offset + 1 + payloadLen]
 
-	handler.HandleData(calledAddr, callingAddr, payloadDat)
+	handler.OnData(calledAddr, callingAddr, payloadDat)
 }
 

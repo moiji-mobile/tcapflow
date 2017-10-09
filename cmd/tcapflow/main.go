@@ -4,12 +4,8 @@ import (
 	"encoding/hex"
 	"flag"
 	"fmt"
-	"io"
 	"strconv"
 	"time"
-	"github.com/google/gopacket"
-	"github.com/google/gopacket/layers"
-	"github.com/google/gopacket/pcap"
 	"gopkg.in/alexcesaro/statsd.v2"
 
 	. "github.com/moiji-mobile/tcapflow"
@@ -65,22 +61,7 @@ func removeState(t *TCAPFlowDataHandler, called_gt, calling_gt SCCPAddress, dtid
 	}
 }
 
-func procName(tag int) string {
-	switch tag {
-	case TCbeginApp:
-		return "BEGIN"
-	case TCendApp:
-		return "END"
-	case TCcontinueApp:
-		return "CONTINUE"
-	case TCabortApp:
-		return "ABORT"
-	default:
-		return strconv.Itoa(tag)
-	}
-}
-
-func (t *TCAPFlowDataHandler) HandleData(called_gt SCCPAddress, calling_gt SCCPAddress, data []uint8) {
+func (t *TCAPFlowDataHandler) OnData(called_gt SCCPAddress, calling_gt SCCPAddress, data []uint8) {
 	tag, otid, dtid, _, comp, _ := DecodeTCAP(data)
 	infos, _ := DecodeROS(comp.Bytes)
 
@@ -94,43 +75,19 @@ func (t *TCAPFlowDataHandler) HandleData(called_gt SCCPAddress, calling_gt SCCPA
 		t.Statsd.Increment("tcapflow.abort")
 		fallthrough
 	case TCendApp, TCcontinueApp:
-		fmt.Printf("%s DTID(%v) %v<-%v STATES(%v)", procName(tag), dtid.Bytes, called_gt.Number, calling_gt.Number, len(t.Sessions))
+		fmt.Printf("%s DTID(%v) %v<-%v STATES(%v)", TCprocName(tag), dtid.Bytes, called_gt.Number, calling_gt.Number, len(t.Sessions))
 		removeState(t, called_gt, calling_gt, dtid.Bytes, infos)
 		fmt.Printf("\n")
 	}
 
 }
 
-func reportParseError(handler *TCAPFlowDataHandler, data []uint8) {
-	r := recover()
-	if r == nil {
-		return
-	}
-
+func (t *TCAPFlowDataHandler) ParseError(data []uint8, r interface{}) {
 	fmt.Printf("ParseError: SCTP(%v) %v\n", hex.EncodeToString(data), r)
 }
 
-func handleSCTPData(handler *TCAPFlowDataHandler, data *layers.SCTPData) {
-	defer reportParseError(handler, data.Payload)
-
-	switch (data.PayloadProtocol) {
-	case layers.SCTPPayloadM2UA:
-		HandleM2UA(handler, data)
-	case layers.SCTPPayloadM3UA:
-		HandleM3UA(handler, data.Payload)
-	case layers.SCTPPayloadM2PA:
-		HandleM2PA(handler, data.Payload)
-	case layers.SCTPPayloadSUA:
-		HandleSUA(handler, data)
-	}
-}
-
-func handlePacket(handler *TCAPFlowDataHandler, packet gopacket.Packet) {
-	for _, p := range packet.Layers() {
-		if data, err := p.(*layers.SCTPData); err {
-			handleSCTPData(handler, data)
-		}
-	}
+func (t *TCAPFlowDataHandler) AfterOnePacket() {
+	t.Statsd.Flush()
 }
 
 func main() {
@@ -155,41 +112,5 @@ func main() {
 	}
 	defer flowHandler.Statsd.Close()
 
-	// Open file or live...
-	var handle *pcap.Handle
-	if len(*pcapFile) > 0 {
-		handle, err = pcap.OpenOffline(*pcapFile)
-		if err != nil {
-			fmt.Printf("ERROR: %v\n", err)
-			return
-		}
-	} else {
-		handle, err = pcap.OpenLive(*pcapDevice, 0, true,  pcap.BlockForever)
-		if err != nil {
-			fmt.Printf("ERROR: %v\n", err)
-			return
-		}
-		err = handle.SetBPFFilter(*pcapFilter)
-		if err != nil {
-			fmt.Printf("ERROR: %v\n", err)
-			return
-		}
-	}
-
-	// Main loop..
-	packetSource := gopacket.NewPacketSource(handle, handle.LinkType())
-	for {
-		packet, err := packetSource.NextPacket()
-		if err == io.EOF {
-			break
-		} else if err == nil {
-			handlePacket(&flowHandler, packet)
-			flowHandler.Statsd.Flush()
-		}
-	}
-
-	// Debugging in case of ran with a PCAP file
-	for _, val := range flowHandler.Sessions {
-		fmt.Printf("LEFT OTID(%v) OTID_HEX(%v)\n", val.Otid, hex.EncodeToString(val.Otid))
-	}
+	RunLoop(*pcapFile, *pcapDevice, *pcapFilter, &flowHandler)
 }

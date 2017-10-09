@@ -2,6 +2,7 @@ package tcapflow
 
 import (
 	"encoding/asn1"
+	"strconv"
 )
 
 // ASN1 handling
@@ -11,6 +12,22 @@ const (
 	TCcontinueApp	= 5 // [APPLICATION 5] Continue,
 	TCabortApp	= 7 // [APPLICATION 7] Abort,
 )
+
+func TCprocName(tag int) string {
+	switch tag {
+	case TCbeginApp:
+		return "BEGIN"
+	case TCendApp:
+		return "END"
+	case TCcontinueApp:
+		return "CONTINUE"
+	case TCabortApp:
+		return "ABORT"
+	default:
+		return strconv.Itoa(tag)
+	}
+}
+
 
 func DecodeTCAP(data []byte) (tag int, otid asn1.RawValue, dtid asn1.RawValue, dialoguePortion asn1.RawValue, components asn1.RawValue, err error) {
 
