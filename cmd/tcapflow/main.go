@@ -84,6 +84,7 @@ func (t *TCAPFlowDataHandler) OnData(called_gt SCCPAddress, calling_gt SCCPAddre
 
 func (t *TCAPFlowDataHandler) ParseError(data []uint8, r interface{}) {
 	fmt.Printf("ParseError: SCTP(%v) %v\n", hex.EncodeToString(data), r)
+	t.Statsd.Increment("tcapflow.parseError")
 }
 
 func (t *TCAPFlowDataHandler) AfterOnePacket() {
