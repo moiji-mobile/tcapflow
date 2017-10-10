@@ -4,6 +4,8 @@ import (
 	"encoding/binary"
 	"bytes"
 	"fmt"
+
+	"github.com/google/gopacket"
 )
 
 type M2PA struct {
@@ -19,7 +21,7 @@ type M2PA struct {
 	Priority	uint8
 }
 
-func HandleM2PA(handler DataHandler, data []uint8) {
+func HandleM2PA(handler DataHandler, data []uint8, packet gopacket.Packet) {
 	m2pa := M2PA{}
 	buf := bytes.NewReader(data)
 	err := binary.Read(buf, binary.BigEndian, &m2pa)
@@ -28,7 +30,7 @@ func HandleM2PA(handler DataHandler, data []uint8) {
 		return
 	}
 	if m2pa.MessageClass == 11 && m2pa.MessageType == 1 {
-		handleMTP(handler, data[17:])
+		handleMTP(handler, data[17:], packet)
 		return
 	}
 }

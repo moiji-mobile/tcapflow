@@ -15,25 +15,25 @@ func reportParseError(handler DataHandler, data []uint8) {
 
 }
 
-func handleSCTPData(handler DataHandler, data *layers.SCTPData) {
+func handleSCTPData(handler DataHandler, data *layers.SCTPData, packet gopacket.Packet) {
 	defer reportParseError(handler, data.Payload)
 
 	switch (data.PayloadProtocol) {
 	case layers.SCTPPayloadM2UA:
-		HandleM2UA(handler, data)
+		HandleM2UA(handler, data, packet)
 	case layers.SCTPPayloadM3UA:
-		HandleM3UA(handler, data.Payload)
+		HandleM3UA(handler, data.Payload, packet)
 	case layers.SCTPPayloadM2PA:
-		HandleM2PA(handler, data.Payload)
+		HandleM2PA(handler, data.Payload, packet)
 	case layers.SCTPPayloadSUA:
-		HandleSUA(handler, data)
+		HandleSUA(handler, data, packet)
 	}
 }
 
 func handlePacket(handler DataHandler, packet gopacket.Packet) {
 	for _, p := range packet.Layers() {
 		if data, err := p.(*layers.SCTPData); err {
-			handleSCTPData(handler, data)
+			handleSCTPData(handler, data, packet)
 		}
 	}
 }

@@ -4,6 +4,8 @@ import (
 	"encoding/binary"
 	"bytes"
 	"fmt"
+
+	"github.com/google/gopacket"
 )
 
 type MTPL3 struct {
@@ -11,7 +13,7 @@ type MTPL3 struct {
 	Routing		[4]uint8
 }
 
-func handleMTP(handler DataHandler, data []uint8) {
+func handleMTP(handler DataHandler, data []uint8, packet gopacket.Packet) {
 	mtpl3 := MTPL3{}
 	buf := bytes.NewReader(data)
 	err := binary.Read(buf, binary.BigEndian, &mtpl3)
@@ -20,7 +22,7 @@ func handleMTP(handler DataHandler, data []uint8) {
 		return
 	}
 	if (mtpl3.Service & 0x0f) == 0x03 {
-		handleSCCP(handler, data[5:])
+		handleSCCP(handler, data[5:], packet)
 	}
 }
 

@@ -4,6 +4,8 @@ import (
 	"encoding/binary"
 	"bytes"
 	"fmt"
+
+	"github.com/google/gopacket"
 )
 
 type SCCPUDT struct {
@@ -48,7 +50,7 @@ func parseAddr(data []uint8) (addr SCCPAddress, err error) {
 	return
 }
 
-func handleSCCP(handler DataHandler, data []uint8) {
+func handleSCCP(handler DataHandler, data []uint8, packet gopacket.Packet) {
 	sccp := SCCPUDT{}
 	if data[0] != 0x09 {
 		fmt.Printf("SCCP: Not unitdata\n")
@@ -75,6 +77,6 @@ func handleSCCP(handler DataHandler, data []uint8) {
 	payloadLen := data[offset]
 	payloadDat := data[offset + 1: offset + 1 + payloadLen]
 
-	handler.OnData(calledAddr, callingAddr, payloadDat)
+	handler.OnData(calledAddr, callingAddr, payloadDat, packet)
 }
 

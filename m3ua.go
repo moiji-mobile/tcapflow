@@ -4,6 +4,8 @@ import (
 	"encoding/binary"
 	"bytes"
 	"fmt"
+
+	"github.com/google/gopacket"
 )
 
 type M3UA struct {
@@ -19,7 +21,7 @@ type M3UAHeader struct {
 	Length		uint16
 }
 
-func HandleM3UA(handler DataHandler, data []uint8) {
+func HandleM3UA(handler DataHandler, data []uint8, packet gopacket.Packet) {
 	m3ua := M3UA{}
 	buf := bytes.NewReader(data)
 	err := binary.Read(buf, binary.BigEndian, &m3ua)
@@ -45,7 +47,7 @@ func HandleM3UA(handler DataHandler, data []uint8) {
 			break
 		}
 		if hdr.Tag == 528 {
-			handleSCCP(handler, payload[12:])
+			handleSCCP(handler, payload[12:], packet)
 		}
 		if hdr.Length % 4 > 0 {
 			padding := int(4 - (hdr.Length % 4))

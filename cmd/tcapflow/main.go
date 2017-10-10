@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 	"gopkg.in/alexcesaro/statsd.v2"
+	"github.com/google/gopacket"
 
 	. "github.com/moiji-mobile/tcapflow"
 )
@@ -61,7 +62,7 @@ func removeState(t *TCAPFlowDataHandler, called_gt, calling_gt SCCPAddress, dtid
 	}
 }
 
-func (t *TCAPFlowDataHandler) OnData(called_gt SCCPAddress, calling_gt SCCPAddress, data []uint8) {
+func (t *TCAPFlowDataHandler) OnData(called_gt SCCPAddress, calling_gt SCCPAddress, data []uint8, packet gopacket.Packet) {
 	tag, otid, dtid, _, comp, _ := DecodeTCAP(data)
 	infos, _ := DecodeROS(comp.Bytes)
 
