@@ -213,14 +213,29 @@ func NewTCAPFlowServer() TCAPFlowServer {
 }
 
 func main() {
+	flowServer := NewTCAPFlowServer()
+	statsdPrefix := flag.String("statsd-prefix", "", "Prefix for statsd messages")
+	serverAddr := flag.String("listen-address", "localhost:5345", "Hostname:port for RPC")
+	expireSession := flag.Duration("expire-session", flowServer.ExpireSessionDuration, "Time to keep unconfirmed TCAP dialogues")
+	expirePending := flag.Duration("expire-pending", flowServer.ExpirePendingDuration, "Time to buffer messages for out-of-order arrival")
+	expireEnded := flag.Duration("expired-ended", flowServer.ExpireEndedDuration, "Time to keep information of ended TCAP dialogues")
 	flag.Parse()
-	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", 6666))
+
+	flowServer.ExpireSessionDuration = *expireSession
+	flowServer.ExpirePendingDuration = *expirePending
+	flowServer.ExpireEndedDuration = *expireEnded
+
+	lis, err := net.Listen("tcp", *serverAddr)
 	if err != nil {
 		fmt.Printf("failed to listen: %v", err)
 		return
 	}
-
-	flowServer := NewTCAPFlowServer()
+	flowServer.Statsd, err = statsd.New(statsd.Prefix(*statsdPrefix))
+	if err != nil {
+		fmt.Printf("ERROR: Failed to create statsd client\n")
+		return
+	}
+	defer flowServer.Statsd.Close()
 
 	grpcServer := grpc.NewServer()
 	rpc.RegisterTCAPFlowServer(grpcServer, &flowServer)
