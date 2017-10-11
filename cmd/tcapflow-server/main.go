@@ -101,16 +101,16 @@ func addState(t *TCAPFlowServer, capt time.Time, calling rpc.SCCPAddress, otid [
 	// Check if a pending end can be applied now
 	early, ok := t.EarlyPending[key]
 	if ok {
+		delete(t.EarlyPending, key)
 		state := early.State
 		time, _ := ptypes.Timestamp(state.Time)
-		doRemoveState(t, time, *state.Called, state.Tcap.Dtid, state.Tcap.Tag)
+		removeState(t, time, state)
 	}
 
 	removeOldSessions(t)
 }
 
-func doRemoveState(t *TCAPFlowServer, capt time.Time, called_gt rpc.SCCPAddress, dtid []byte, tag int32) bool {
-	key := buildKey(called_gt, dtid)
+func doRemoveState(t *TCAPFlowServer, key string, capt time.Time, called_gt rpc.SCCPAddress, dtid []byte, tag int32) bool {
 	val, ok := t.Sessions[key]
 
 	if !ok {
@@ -134,24 +134,33 @@ func doRemoveState(t *TCAPFlowServer, capt time.Time, called_gt rpc.SCCPAddress,
 	case tcapflow.TCabortApp, tcapflow.TCendApp:
 		// We are done for good!
 	case tcapflow.TCcontinueApp:
+		// Remember that more is to come
 		t.Old[key] = TCAPOld{EndedTime: time.Now()}
 	}
 
+	removeOldSessions(t)
 	return true
 }
 
 func removeState(t *TCAPFlowServer, capt time.Time, state rpc.StateInfo) {
 	called := *state.Called
 	dtid := state.Tcap.Dtid
+	key := buildKey(called, dtid)
 
 	// Is the state removed?
-	if !doRemoveState(t, capt, called, dtid, state.Tcap.Tag) {
-		// Check if it is already pending?
-		key := buildKey(called, dtid)
-		_, ok := t.EarlyPending[key]
-		if !ok {
-			// Check if it is known removed
-			_, ok = t.Old[key]
+	if !doRemoveState(t, key, capt, called, dtid, state.Tcap.Tag) {
+		// Not removed but maybe is old and it is over now?
+		// Besides the point of both sides sending a TC-end and
+		// the second is pending again. But such is life.
+		_, isOld := t.Old[key]
+		if isOld {
+			switch state.Tcap.Tag {
+			case tcapflow.TCendApp, tcapflow.TCabortApp:
+				delete(t.Old, key)
+			}
+		} else {
+			// Check if it is already pending?
+			_, ok := t.EarlyPending[key]
 			if !ok {
 				// Let's remember it...
 				t.EarlyPending[key] = TCAPEarlyStateInfo{
@@ -187,6 +196,22 @@ func (t *TCAPFlowServer) AddState(ctx context.Context, in *rpc.StateInfo) (*empt
 	return nil, nil
 }
 
+func NewTCAPFlowServer() TCAPFlowServer {
+	flowServer := TCAPFlowServer{}
+	flowServer.ExpireSessionDuration = 10 * time.Second
+	flowServer.ExpirePendingDuration = 2 * time.Second
+	flowServer.ExpireEndedDuration = 10 * time.Second
+
+	flowServer.Sessions = make(map[string]TCAPDialogueStart)
+	flowServer.EarlyPending = make(map[string]TCAPEarlyStateInfo)
+	flowServer.Old = make(map[string]TCAPOld)
+	flowServer.Statsd, _ = statsd.New()
+
+	flowServer.Scale = 1
+
+	return flowServer
+}
+
 func main() {
 	flag.Parse()
 	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", 6666))
@@ -195,10 +220,7 @@ func main() {
 		return
 	}
 
-	flowServer := TCAPFlowServer{}
-	flowServer.ExpireSessionDuration = 10 * time.Second
-	flowServer.ExpirePendingDuration = 2 * time.Second
-	flowServer.ExpireEndedDuration = 10 * time.Second
+	flowServer := NewTCAPFlowServer()
 
 	grpcServer := grpc.NewServer()
 	rpc.RegisterTCAPFlowServer(grpcServer, &flowServer)
