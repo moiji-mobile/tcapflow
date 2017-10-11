@@ -9,4 +9,3 @@ import (
 func HandleSUA(handler DataHandler, data *layers.SCTPData, packet gopacket.Packet) {
 	fmt.Printf("SUA not implemented\n")
 }
-

@@ -10,9 +10,9 @@ const (
 )
 
 type ROSInfo struct {
-	Type		int
-	InvokeId	int
-	OpCode		int
+	Type     int
+	InvokeId int
+	OpCode   int
 }
 
 func decodeInvoke(data []byte) (info ROSInfo, err error) {

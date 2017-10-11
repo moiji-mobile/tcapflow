@@ -5,24 +5,24 @@ import (
 	"encoding/hex"
 	"flag"
 	"fmt"
-	"gopkg.in/alexcesaro/statsd.v2"
-	"google.golang.org/grpc"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/google/gopacket"
 	. "github.com/moiji-mobile/tcapflow"
 	"github.com/moiji-mobile/tcapflow/rpc"
+	"google.golang.org/grpc"
+	"gopkg.in/alexcesaro/statsd.v2"
 )
 
 type ClientFlowDataHandler struct {
-	Statsd		*statsd.Client
-	RpcClient	rpc.TCAPFlowClient
+	Statsd    *statsd.Client
+	RpcClient rpc.TCAPFlowClient
 }
 
 func SCCPAddressProto(addr SCCPAddress) *rpc.SCCPAddress {
 	return &rpc.SCCPAddress{
-		Ssn: uint32(addr.Ssn),
-		Ton: uint32(addr.Ton),
-		Npi: uint32(addr.Npi),
+		Ssn:    uint32(addr.Ssn),
+		Ton:    uint32(addr.Ton),
+		Npi:    uint32(addr.Npi),
 		Number: addr.Number,
 	}
 }
@@ -30,11 +30,11 @@ func SCCPAddressProto(addr SCCPAddress) *rpc.SCCPAddress {
 func ROSInfoProto(infos []ROSInfo) []*rpc.ROSInfo {
 	rpcInfos := make([]*rpc.ROSInfo, 0, len(infos))
 	for _, info := range infos {
-		rpcInfos = append(rpcInfos, &rpc.ROSInfo {
-					Type: int32(info.Type),
-					InvokeId: int32(info.InvokeId),
-					OpCode: int32(info.OpCode),
-				})
+		rpcInfos = append(rpcInfos, &rpc.ROSInfo{
+			Type:     int32(info.Type),
+			InvokeId: int32(info.InvokeId),
+			OpCode:   int32(info.OpCode),
+		})
 	}
 	return rpcInfos
 }
@@ -45,15 +45,15 @@ func (t *ClientFlowDataHandler) OnData(called_gt SCCPAddress, calling_gt SCCPAdd
 
 	rpcTime, _ := ptypes.TimestampProto(packet.Metadata().Timestamp)
 	rpc := &rpc.StateInfo{
-			Time: rpcTime,
-			Calling: SCCPAddressProto(calling_gt),
-			Called: SCCPAddressProto(called_gt),
-			Tcap: &rpc.TCAPInfo{
-				Otid: otid.Bytes,
-				Dtid: dtid.Bytes,
-				Tag: int32(tag), },
-			Ros: ROSInfoProto(infos),
-		}
+		Time:    rpcTime,
+		Calling: SCCPAddressProto(calling_gt),
+		Called:  SCCPAddressProto(called_gt),
+		Tcap: &rpc.TCAPInfo{
+			Otid: otid.Bytes,
+			Dtid: dtid.Bytes,
+			Tag:  int32(tag)},
+		Ros: ROSInfoProto(infos),
+	}
 
 	_, err := t.RpcClient.AddState(context.Background(), rpc)
 	if err != nil {

@@ -2,10 +2,10 @@ package tcapflow
 
 import (
 	"fmt"
-	"io"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
+	"io"
 )
 
 func reportParseError(handler DataHandler, data []uint8) {
@@ -18,7 +18,7 @@ func reportParseError(handler DataHandler, data []uint8) {
 func handleSCTPData(handler DataHandler, data *layers.SCTPData, packet gopacket.Packet) {
 	defer reportParseError(handler, data.Payload)
 
-	switch (data.PayloadProtocol) {
+	switch data.PayloadProtocol {
 	case layers.SCTPPayloadM2UA:
 		HandleM2UA(handler, data, packet)
 	case layers.SCTPPayloadM3UA:
@@ -49,7 +49,7 @@ func RunLoop(pcapFile string, pcapDevice string, pcapFilter string, handler Data
 			return
 		}
 	} else {
-		handle, err = pcap.OpenLive(pcapDevice, 0, true,  pcap.BlockForever)
+		handle, err = pcap.OpenLive(pcapDevice, 0, true, pcap.BlockForever)
 		if err != nil {
 			fmt.Printf("ERROR: %v\n", err)
 			return

@@ -1,16 +1,16 @@
 package tcapflow
 
 import (
-	"encoding/binary"
 	"bytes"
+	"encoding/binary"
 	"fmt"
 
 	"github.com/google/gopacket"
 )
 
 type MTPL3 struct {
-	Service		uint8
-	Routing		[4]uint8
+	Service uint8
+	Routing [4]uint8
 }
 
 func handleMTP(handler DataHandler, data []uint8, packet gopacket.Packet) {
@@ -25,4 +25,3 @@ func handleMTP(handler DataHandler, data []uint8, packet gopacket.Packet) {
 		handleSCCP(handler, data[5:], packet)
 	}
 }
-

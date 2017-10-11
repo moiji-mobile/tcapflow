@@ -8,49 +8,48 @@ import (
 	"strconv"
 	"time"
 
-	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/empty"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
 
 	"github.com/moiji-mobile/tcapflow"
 	"github.com/moiji-mobile/tcapflow/rpc"
-
 
 	"gopkg.in/alexcesaro/statsd.v2"
 )
 
 type TCAPDialogueStart struct {
-	CaptTime	time.Time
-	AddedTime	time.Time
-	Ros		[]*rpc.ROSInfo
-	Otid		[]byte
+	CaptTime  time.Time
+	AddedTime time.Time
+	Ros       []*rpc.ROSInfo
+	Otid      []byte
 }
 
 // The path from one node to the server might be more quick than
 // the other. We will have to queue some responses for that.
 type TCAPEarlyStateInfo struct {
-	State		rpc.StateInfo
-	AddedTime	time.Time	// When was the state locally added?
-	CaptTime	time.Time
+	State     rpc.StateInfo
+	AddedTime time.Time // When was the state locally added?
+	CaptTime  time.Time
 }
 
 // For dialogues we stopped to track but might add more messages
 type TCAPOld struct {
-	EndedTime	time.Time
+	EndedTime time.Time
 }
 
 type TCAPFlowServer struct {
-	Sessions	map[string]TCAPDialogueStart // TC-begin one waiting for a pick-up
-	EarlyPending	map[string]TCAPEarlyStateInfo
-	Old		map[string]TCAPOld // TC-end or second TC-continue
+	Sessions     map[string]TCAPDialogueStart // TC-begin one waiting for a pick-up
+	EarlyPending map[string]TCAPEarlyStateInfo
+	Old          map[string]TCAPOld // TC-end or second TC-continue
 
-	Statsd		*statsd.Client
+	Statsd *statsd.Client
 
-	Scale		time.Duration
+	Scale                 time.Duration
 	ExpireSessionDuration time.Duration
 	ExpirePendingDuration time.Duration
-	ExpireEndedDuration time.Duration
+	ExpireEndedDuration   time.Duration
 }
 
 func buildKey(gt rpc.SCCPAddress, tid []byte) string {
@@ -92,10 +91,10 @@ func addState(t *TCAPFlowServer, capt time.Time, calling rpc.SCCPAddress, otid [
 	// Add the state
 	key := buildKey(calling, otid)
 	elem := TCAPDialogueStart{
-			AddedTime: time.Now(),
-			CaptTime: capt,
-			Ros: infos,
-			Otid: otid}
+		AddedTime: time.Now(),
+		CaptTime:  capt,
+		Ros:       infos,
+		Otid:      otid}
 	t.Sessions[key] = elem
 	t.Statsd.Increment("tcapflow-server.newState")
 
@@ -110,7 +109,7 @@ func addState(t *TCAPFlowServer, capt time.Time, calling rpc.SCCPAddress, otid [
 	removeOldSessions(t)
 }
 
-func doRemoveState(t *TCAPFlowServer, capt time.Time, called_gt rpc.SCCPAddress, dtid []byte, tag int32)  bool {
+func doRemoveState(t *TCAPFlowServer, capt time.Time, called_gt rpc.SCCPAddress, dtid []byte, tag int32) bool {
 	key := buildKey(called_gt, dtid)
 	val, ok := t.Sessions[key]
 
@@ -121,7 +120,7 @@ func doRemoveState(t *TCAPFlowServer, capt time.Time, called_gt rpc.SCCPAddress,
 	diff := capt.Sub(val.CaptTime)
 	delete(t.Sessions, key)
 	t.Statsd.Increment("tcapflow-server.delState")
-	t.Statsd.Timing("tcapflow-server.latency", float64(diff / t.Scale))
+	t.Statsd.Timing("tcapflow-server.latency", float64(diff/t.Scale))
 
 	// Special work needed?
 	_, ok = t.EarlyPending[key]
@@ -156,10 +155,10 @@ func removeState(t *TCAPFlowServer, capt time.Time, state rpc.StateInfo) {
 			if !ok {
 				// Let's remember it...
 				t.EarlyPending[key] = TCAPEarlyStateInfo{
-					State: state,
+					State:     state,
 					AddedTime: time.Now(),
-					CaptTime: capt,
-					}
+					CaptTime:  capt,
+				}
 			}
 		}
 	}

@@ -1,24 +1,24 @@
 package tcapflow
 
 import (
-	"encoding/binary"
 	"bytes"
+	"encoding/binary"
 	"fmt"
 
 	"github.com/google/gopacket"
 )
 
 type M3UA struct {
-	Version		uint8
-	Reserved	uint8
-	MessageClass	uint8
-	MessageType	uint8
-	Length		uint32
+	Version      uint8
+	Reserved     uint8
+	MessageClass uint8
+	MessageType  uint8
+	Length       uint32
 }
 
 type M3UAHeader struct {
-	Tag		uint16
-	Length		uint16
+	Tag    uint16
+	Length uint16
 }
 
 func HandleM3UA(handler DataHandler, data []uint8, packet gopacket.Packet) {
@@ -41,7 +41,7 @@ func HandleM3UA(handler DataHandler, data []uint8, packet gopacket.Packet) {
 			break
 		}
 
-		payload := make([]byte, hdr.Length - 4)
+		payload := make([]byte, hdr.Length-4)
 		_, err = buf.Read(payload)
 		if err != nil {
 			break
@@ -49,7 +49,7 @@ func HandleM3UA(handler DataHandler, data []uint8, packet gopacket.Packet) {
 		if hdr.Tag == 528 {
 			handleSCCP(handler, payload[12:], packet)
 		}
-		if hdr.Length % 4 > 0 {
+		if hdr.Length%4 > 0 {
 			padding := int(4 - (hdr.Length % 4))
 			for i := 0; i < padding; i++ {
 				_, err = buf.ReadByte()
@@ -60,4 +60,3 @@ func HandleM3UA(handler DataHandler, data []uint8, packet gopacket.Packet) {
 		}
 	}
 }
-

@@ -4,25 +4,25 @@ import (
 	"encoding/hex"
 	"flag"
 	"fmt"
+	"github.com/google/gopacket"
+	"gopkg.in/alexcesaro/statsd.v2"
 	"strconv"
 	"time"
-	"gopkg.in/alexcesaro/statsd.v2"
-	"github.com/google/gopacket"
 
 	. "github.com/moiji-mobile/tcapflow"
 )
 
 type TCAPDialogueStart struct {
-	StartTime	time.Time
-	Ros		[]ROSInfo
-	Otid		[]byte
+	StartTime time.Time
+	Ros       []ROSInfo
+	Otid      []byte
 }
 
 type TCAPFlowDataHandler struct {
-	Sessions	map[string]TCAPDialogueStart
-	Scale		time.Duration
-	Statsd		*statsd.Client
-	ExpireDuration	time.Duration
+	Sessions       map[string]TCAPDialogueStart
+	Scale          time.Duration
+	Statsd         *statsd.Client
+	ExpireDuration time.Duration
 }
 
 func buildKey(gt SCCPAddress, tid []byte) string {
@@ -32,9 +32,9 @@ func buildKey(gt SCCPAddress, tid []byte) string {
 func addState(t *TCAPFlowDataHandler, called_gt, calling_gt SCCPAddress, otid []byte, infos []ROSInfo) {
 	key := buildKey(calling_gt, otid)
 	elem := TCAPDialogueStart{
-			StartTime: time.Now(),
-			Ros: infos,
-			Otid: otid}
+		StartTime: time.Now(),
+		Ros:       infos,
+		Otid:      otid}
 	t.Sessions[key] = elem
 	t.Statsd.Increment("tcapflow.newState")
 }
@@ -48,7 +48,7 @@ func removeState(t *TCAPFlowDataHandler, called_gt, calling_gt SCCPAddress, dtid
 		diff := now.Sub(val.StartTime)
 		delete(t.Sessions, key)
 		t.Statsd.Increment("tcapflow.delState")
-		t.Statsd.Timing("tcapflow.latency", float64(diff / t.Scale))
+		t.Statsd.Timing("tcapflow.latency", float64(diff/t.Scale))
 	}
 
 	// Expire older sessions. With seconds we run into problems...
@@ -102,7 +102,7 @@ func main() {
 	pcapFile := flag.String("pcap-file", "", "Filename for PCAP")
 	pcapDevice := flag.String("pcap-device", "any", "Device to sniff")
 	pcapFilter := flag.String("pcap-filter", "sctp", "Filter for live sniffing")
-	expireDuration := flag.Duration("expire-state", 10 * time.Second, "Remove state")
+	expireDuration := flag.Duration("expire-state", 10*time.Second, "Remove state")
 	statsdPrefix := flag.String("statsd-prefix", "", "Prefix for statsd messages")
 	flag.Parse()
 

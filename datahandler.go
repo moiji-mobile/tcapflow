@@ -9,4 +9,3 @@ type DataHandler interface {
 	AfterOnePacket()
 	ParseError(data []uint8, recovered interface{})
 }
-

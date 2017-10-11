@@ -7,10 +7,10 @@ import (
 
 // ASN1 handling
 const (
-	TCbeginApp	= 2 // [APPLICATION 2] Begin,
-	TCendApp	= 4 // [APPLICATION 4] End,
-	TCcontinueApp	= 5 // [APPLICATION 5] Continue,
-	TCabortApp	= 7 // [APPLICATION 7] Abort,
+	TCbeginApp    = 2 // [APPLICATION 2] Begin,
+	TCendApp      = 4 // [APPLICATION 4] End,
+	TCcontinueApp = 5 // [APPLICATION 5] Continue,
+	TCabortApp    = 7 // [APPLICATION 7] Abort,
 )
 
 func TCprocName(tag int) string {
@@ -27,7 +27,6 @@ func TCprocName(tag int) string {
 		return strconv.Itoa(tag)
 	}
 }
-
 
 func DecodeTCAP(data []byte) (tag int, otid asn1.RawValue, dtid asn1.RawValue, dialoguePortion asn1.RawValue, components asn1.RawValue, err error) {
 
