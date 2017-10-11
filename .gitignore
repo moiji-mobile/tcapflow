@@ -1,1 +1,4 @@
 *.sw?
+/tcapflow
+/tcapflow-client
+/tcapflow-server
