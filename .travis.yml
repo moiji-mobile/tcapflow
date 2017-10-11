@@ -1,0 +1,17 @@
+language: go
+
+addons:
+  apt:
+    packages:
+    - libpcap-dev
+
+go:
+  - 1.9.x
+  - master
+
+script:
+  - go get -v 
+  - go build ./cmd/tcapflow
+  - go build ./cmd/tcapflow-client
+  - go build ./cmd/tcapflow-server
+  - go test -v ./cmd/tcapflow ./cmd/tcapflow-server/ ./cmd/tcapflow-client/
