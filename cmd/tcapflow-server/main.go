@@ -98,6 +98,8 @@ func addState(t *TCAPFlowServer, capt time.Time, calling rpc.SCCPAddress, otid [
 	t.Sessions[key] = elem
 	t.Statsd.Increment("tcapflow-server.newState")
 
+	delete(t.Old, key)
+
 	// Check if a pending end can be applied now
 	early, ok := t.EarlyPending[key]
 	if ok {

@@ -72,6 +72,26 @@ func buildTcContinue() rpc.StateInfo {
 			}}
 }
 
+func buildTcAbort() rpc.StateInfo {
+	t := &timestamp.Timestamp {1, 0}
+	return rpc.StateInfo{
+			Time: t,
+			Calling: &rpc.SCCPAddress{
+					Ssn: 2,
+					Ton: 23,
+					Npi: 23,
+					Number: "hlr"},
+			Called: &rpc.SCCPAddress{
+					Ssn: 1,
+					Ton: 23,
+					Npi: 23,
+					Number: "vlr"},
+			Tcap: &rpc.TCAPInfo{
+					Dtid: []byte{1, 2, 3, 4},
+					Tag: tcapflow.TCabortApp,
+			}}
+}
+
 func TestTcBeginTcEnd(t *testing.T) {
 	s := NewTCAPFlowServer()
 	b := buildTcBegin()
@@ -289,4 +309,109 @@ func TestTcEndTcBegin(t *testing.T) {
 		t.Fatalf("Should have no data %v %v\n", len(s.EarlyPending), len(s.Old))
 	}
 
+}
+
+func TestTcAbortTcBegin(t *testing.T) {
+	// Order of arrival changed..
+	s := NewTCAPFlowServer()
+	b := buildTcBegin()
+	a := buildTcAbort()
+
+	// TC-end arrived first
+	s.AddState(context.Background(), &a)
+	if len(s.Sessions) != 0 {
+		t.Fatalf("Should have one session %v\n", len(s.Sessions))
+	}
+	if len(s.EarlyPending) != 1 || len(s.Old) != 0 {
+		t.Fatalf("Should have no data %v %v\n", len(s.EarlyPending), len(s.Old))
+	}
+
+	// TC-begin now
+	s.AddState(context.Background(), &b)
+	if len(s.Sessions) != 0 {
+		t.Fatalf("Should have one session %v\n", len(s.Sessions))
+	}
+	if len(s.EarlyPending) != 0 || len(s.Old) != 0 {
+		t.Fatalf("Should have no data %v %v\n", len(s.EarlyPending), len(s.Old))
+	}
+}
+
+func TestTcBeginTcAbort(t *testing.T) {
+	s := NewTCAPFlowServer()
+	b := buildTcBegin()
+	a := buildTcEnd()
+
+	// TC-begin first
+	s.AddState(context.Background(), &b)
+	if len(s.Sessions) != 1 {
+		t.Fatalf("Should have one session %v\n", len(s.Sessions))
+	}
+	if len(s.EarlyPending) != 0 || len(s.Old) != 0 {
+		t.Fatalf("Should have no data %v %v\n", len(s.EarlyPending), len(s.Old))
+	}
+
+	// TC-end to finish it
+	s.AddState(context.Background(), &a)
+	if len(s.Sessions) != 0 {
+		t.Fatalf("Should have one session %v\n", len(s.Sessions))
+	}
+	if len(s.EarlyPending) != 0 || len(s.Old) != 0 {
+		t.Fatalf("Should have no data %v %v\n", len(s.EarlyPending), len(s.Old))
+	}
+}
+
+func TestTcBeginTcBegin(t *testing.T) {
+	s := NewTCAPFlowServer()
+	b := buildTcBegin()
+
+	// TC-begin first
+	s.AddState(context.Background(), &b)
+	if len(s.Sessions) != 1 {
+		t.Fatalf("Should have one session %v\n", len(s.Sessions))
+	}
+	if len(s.EarlyPending) != 0 || len(s.Old) != 0 {
+		t.Fatalf("Should have no data %v %v\n", len(s.EarlyPending), len(s.Old))
+	}
+
+	// TC-begin first
+	s.AddState(context.Background(), &b)
+	if len(s.Sessions) != 1 {
+		t.Fatalf("Should have one session %v\n", len(s.Sessions))
+	}
+	if len(s.EarlyPending) != 0 || len(s.Old) != 0 {
+		t.Fatalf("Should have no data %v %v\n", len(s.EarlyPending), len(s.Old))
+	}
+}
+
+func TestTcBeginTcContinueTcBegin(t *testing.T) {
+	s := NewTCAPFlowServer()
+	b := buildTcBegin()
+	c := buildTcContinue()
+
+	// TC-begin first
+	s.AddState(context.Background(), &b)
+	if len(s.Sessions) != 1 {
+		t.Fatalf("Should have one session %v\n", len(s.Sessions))
+	}
+	if len(s.EarlyPending) != 0 || len(s.Old) != 0 {
+		t.Fatalf("Should have no data %v %v\n", len(s.EarlyPending), len(s.Old))
+	}
+
+	// TC-continue now to wrap it up
+	s.AddState(context.Background(), &c)
+	if len(s.Sessions) != 0 {
+		t.Fatalf("Should have no session %v\n", len(s.Sessions))
+	}
+	if len(s.EarlyPending) != 0 || len(s.Old) != 1 {
+		t.Fatalf("Should have no data %v %v\n", len(s.EarlyPending), len(s.Old))
+	}
+
+	// TC-begin first
+	s.AddState(context.Background(), &b)
+	if len(s.Sessions) != 1 {
+		t.Fatalf("Should have one session %v\n", len(s.Sessions))
+	}
+	if len(s.EarlyPending) != 0 || len(s.Old) != 0 {
+		t.Fatalf("Should have no data %v %v\n", len(s.EarlyPending), len(s.Old))
+	}
 }
