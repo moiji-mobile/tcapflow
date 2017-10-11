@@ -60,6 +60,7 @@ func RunLoop(pcapFile string, pcapDevice string, pcapFilter string, handler Data
 			return
 		}
 	}
+	defer handle.Close()
 
 	// Main loop..
 	packetSource := gopacket.NewPacketSource(handle, handle.LinkType())
